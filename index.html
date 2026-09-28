@@ -685,8 +685,8 @@
                         <i class="fa-solid fa-arrow-right-arrow-left text-orange-500 ml-1"></i> نوع
                     </label>
                     <select id="itemType" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-400 outline-none bg-white">
-                        <option value="ورود">➕ ورود</option>
-                        <option value="خروج">➖ خروج</option>
+                        <option value="ورود">➕ ورود (بدهی)</option>
+                        <option value="خروج">➖ خروج (بستانکاری)</option>
                     </select>
                 </div>
                 <!-- مبلغ -->
@@ -735,11 +735,11 @@
         <!-- خلاصه آمار -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 no-print">
             <div class="bg-white rounded-xl shadow p-4 border-r-4 border-green-500">
-                <div class="text-sm text-gray-500">📥 کل ورود و دریافتی</div>
+                <div class="text-sm text-gray-500">📥 بدهی</div>
                 <div class="text-xl font-bold text-green-600"><span id="totalIn">۰</span> <span class="text-xs font-medium text-gray-400">تومان</span></div>
             </div>
             <div class="bg-white rounded-xl shadow p-4 border-r-4 border-red-500">
-                <div class="text-sm text-gray-500">📤 کل خروج و هزینه</div>
+                <div class="text-sm text-gray-500">📤 بستانکاری</div>
                 <div class="text-xl font-bold text-red-600"><span id="totalOut">۰</span> <span class="text-xs font-medium text-gray-400">تومان</span></div>
             </div>
             <div class="bg-white rounded-xl shadow p-4 border-r-4 border-blue-500">
@@ -1376,8 +1376,8 @@
                         <div class="arch-meta">
                             <span>📅 تاریخ تسویه: <b>${escapeHtml(p.settledAt || '-')}</b></span>
                             <span>📋 تراکنش: <b>${t.count}</b></span>
-                            <span style="color:#059669">📥 ورود: <b>${formatNumberWithCommas(t.totalIn)}</b></span>
-                            <span style="color:#e11d48">📤 خروج: <b>${formatNumberWithCommas(t.totalOut)}</b></span>
+                            <span style="color:#059669">📥 بدهی: <b>${formatNumberWithCommas(t.totalIn)}</b></span>
+                            <span style="color:#e11d48">📤 بستانکاری: <b>${formatNumberWithCommas(t.totalOut)}</b></span>
                             <span style="color:${profitColor}">📊 سود/زیان: <b>${formatNumberWithCommas(t.balance)}</b></span>
                         </div>
                         <div class="arch-actions">
@@ -1438,8 +1438,8 @@
                 lines.push([i + 1, `"${(e.name || '').replace(/"/g, '""')}"`, `"${e.category || ''}"`, `"${e.type || ''}"`, e.price || 0, `"${e.date || ''}"`, `"${(e.note || '').replace(/"/g, '""')}"`].join(','));
             });
             lines.push('');
-            lines.push(`"جمع ورود",${t.totalIn}`);
-            lines.push(`"جمع خروج",${t.totalOut}`);
+            lines.push(`"جمع بدهی",${t.totalIn}`);
+            lines.push(`"جمع بستانکاری",${t.totalOut}`);
             lines.push(`"سود/زیان",${t.balance}`);
             const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -1668,13 +1668,10 @@
             alert('✅ موارد انتخاب‌شده با موفقیت حذف شدند.');
         }
 
-        function render() {
-            // یکدست‌سازی تاریخ‌های قدیمی (مثل 1405/05/5) برای مرتب‌سازی و گروه‌بندی درست
-            entries.forEach(e => { e.date = normalizeShamsiDate(e.date); });
-          
-                      const search = searchInput.value.trim().toLowerCase();
+        function getFilteredSorted() {
+            const search = searchInput.value.trim().toLowerCase();
 
-            let filtered = entries.filter(e => {
+            const filtered = entries.filter(e => {
                 return e.name.toLowerCase().includes(search) ||
                        e.category.toLowerCase().includes(search) ||
                        (e.note || '').toLowerCase().includes(search);
@@ -1689,11 +1686,19 @@
                 }
                 // اگر تاریخ‌ها یکی بود، بر اساس ID مرتب کن
                 if (order === 'desc') {
-                    return b.id - a.id; 
+                    return b.id - a.id;
                 } else {
-                    return a.id - b.id; 
+                    return a.id - b.id;
                 }
             });
+            return filtered;
+        }
+
+        function render() {
+            // یکدست‌سازی تاریخ‌های قدیمی (مثل 1405/05/5) برای مرتب‌سازی و گروه‌بندی درست
+            entries.forEach(e => { e.date = normalizeShamsiDate(e.date); });
+
+            const filtered = getFilteredSorted();
 
             let totalIn = 0, totalOut = 0;
             entries.forEach(e => {
@@ -1707,7 +1712,15 @@
 
             totalInSpan.textContent = formatNumberWithCommas(totalIn);
             totalOutSpan.textContent = formatNumberWithCommas(totalOut);
-            balanceSpan.textContent = formatNumberWithCommas(balance);
+            // اگر حساب منفی شد، به‌جای عدد منفی، کلمه «بستانکاری» نمایش داده می‌شود
+            const balanceCard = balanceSpan.parentElement;
+            if (balance < 0) {
+                balanceSpan.textContent = 'بستانکاری ' + formatNumberWithCommas(Math.abs(balance));
+                if (balanceCard) { balanceCard.classList.remove('text-blue-600'); balanceCard.classList.add('text-red-600'); }
+            } else {
+                balanceSpan.textContent = formatNumberWithCommas(balance);
+                if (balanceCard) { balanceCard.classList.remove('text-red-600'); balanceCard.classList.add('text-blue-600'); }
+            }
             totalCountSpan.textContent = entries.length;
 
             // مقادیر سربرگ فاکتور چاپی
@@ -1725,20 +1738,20 @@
                 printTotals.innerHTML = `
                     <tr>
                         <td colspan="3" class="total-label">جمع کل</td>
-                        <td class="total-kind">ورود و دریافتی</td>
+                        <td class="total-kind">بدهی</td>
                         <td class="total-value">${formatNumberWithCommas(totalIn)} تومان</td>
                         <td colspan="2" class="total-count">تعداد تراکنش‌ها: ${entries.length}</td>
                     </tr>
                     <tr>
                         <td colspan="3"></td>
-                        <td class="total-kind">خروج و هزینه</td>
+                        <td class="total-kind">بستانکاری</td>
                         <td class="total-value">${formatNumberWithCommas(totalOut)} تومان</td>
                         <td colspan="2"></td>
                     </tr>
                     <tr>
                         <td colspan="3"></td>
                         <td class="total-kind" style="font-weight:700;">موجودی خالص</td>
-                        <td class="total-value">${formatNumberWithCommas(balance)} تومان</td>
+                        <td class="total-value">${balance < 0 ? 'بستانکاری: ' + formatNumberWithCommas(Math.abs(balance)) + ' تومان' : formatNumberWithCommas(balance) + ' تومان'}</td>
                         <td colspan="2"></td>
                     </tr>
                 `;
@@ -1767,70 +1780,8 @@
             const paginatedItems = filtered.slice(startIdx, endIdx);
 
             // جمع مبلغ هر روز (بر اساس همان فیلتر جاری)
-            const dayTotals = {};
-            filtered.forEach(e => {
-                const t = dayTotals[e.date] || (dayTotals[e.date] = { in: 0, out: 0, count: 0 });
-                t.count++;
-                if (e.type === 'خروج') t.out += e.price; else t.in += e.price;
-            });
-
-            let html = '';
-            let lastDate = ''; 
-
-            paginatedItems.forEach((e, index) => {
-                const absoluteIndex = startIdx + index + 1;
-
-                if (e.date !== lastDate) {
-                    lastDate = e.date;
-                    html += `
-                        <tr class="bg-blue-50/80 day-row">
-                            <td colspan="9" class="px-4 py-2 text-xs font-bold text-blue-800">
-                                <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 w-full">
-                                    <span><i class="fa-regular fa-calendar-days ml-1"></i> روز: ${e.date} (${getShamsiDayName(e.date)})</span>
-                                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                        <span class="text-green-700">📥 ورود: ${formatNumberWithCommas(dayTotals[e.date].in)}</span>
-                                        <span class="text-red-700">📤 خروج: ${formatNumberWithCommas(dayTotals[e.date].out)}</span>
-                                        <span class="text-blue-900">📊 جمع روز: ${formatNumberWithCommas(dayTotals[e.date].in - dayTotals[e.date].out)} تومان</span>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                let badge = '';
-                if (e.type === 'ورود') {
-                    badge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">ورود</span>';
-                } else if (e.type === 'خروج') {
-                    badge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">خروج</span>';
-                } else {
-                    badge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">دریافت روزانه</span>';
-                }
-                
-                html += `
-                    <tr class="border-b hover:bg-gray-50 transition fade-in">
-                        <td class="px-4 py-3">
-                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" value="${e.id}">
-                        </td>
-                        <td data-label="#" class="px-4 py-3 text-gray-400 text-xs">${absoluteIndex}</td>
-                        <td data-label="عنوان" class="px-4 py-3 font-medium text-gray-800">${e.name}</td>
-                        <td data-label="گروه" class="px-4 py-3"><span class="bg-gray-100 px-2 py-0.5 rounded-full text-xs">${e.category}</span></td>
-                        <td data-label="نوع" class="px-4 py-3">${badge}</td>
-                        <td data-label="مبلغ (تومان)" class="px-4 py-3 font-mono text-blue-600">${formatNumberWithCommas(e.price)}</td>
-                       <td data-label="تاریخ" class="px-4 py-3 text-xs text-gray-500 font-mono">${e.date}</td>
-                        <td data-label="توضیحات" class="px-4 py-3 text-xs text-gray-500 max-w-[150px] truncate${e.note ? ' note-cell' : ''}" ${e.note ? `onclick="openNotePopup(${e.id})" title="نمایش کامل توضیحات"` : ''}>${e.note || '—'}</td>
-                        <td data-label="عملیات" class="px-4 py-3 text-center flex items-center justify-center gap-3 no-print">
-                            <button onclick="editEntry(${e.id})" class="edit-btn text-blue-400 hover:text-blue-600 transition" title="ویرایش">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button onclick="deleteEntry(${e.id})" class="delete-btn text-red-400 hover:text-red-600 transition" title="حذف">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
+            const dayTotals = buildDayTotals(filtered);
+            tbody.innerHTML = buildRowsHTML(paginatedItems, dayTotals, startIdx);
 
             renderPaginationControls(totalPages);
         }
@@ -1863,6 +1814,76 @@
         function removePaginationUI() {
             const paginationContainer = document.getElementById('paginationContainer');
             if (paginationContainer) paginationContainer.innerHTML = '';
+        }
+
+        function buildDayTotals(items) {
+            const dayTotals = {};
+            items.forEach(e => {
+                const t = dayTotals[e.date] || (dayTotals[e.date] = { in: 0, out: 0, count: 0 });
+                t.count++;
+                if (e.type === 'خروج') t.out += e.price; else t.in += e.price;
+            });
+            return dayTotals;
+        }
+
+        function buildRowsHTML(items, dayTotals, startIndex) {
+            let html = '';
+            let lastDate = '';
+
+            items.forEach((e, index) => {
+                const absoluteIndex = startIndex + index + 1;
+
+                if (e.date !== lastDate) {
+                    lastDate = e.date;
+                    html += `
+                        <tr class="bg-blue-50/80 day-row">
+                            <td colspan="9" class="px-4 py-2 text-xs font-bold text-blue-800">
+                                <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 w-full">
+                                    <span><i class="fa-regular fa-calendar-days ml-1"></i> روز: ${e.date} (${getShamsiDayName(e.date)})</span>
+                                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                        <span class="text-green-700">📥 بدهی: ${formatNumberWithCommas(dayTotals[e.date].in)}</span>
+                                        <span class="text-red-700">📤 بستانکاری: ${formatNumberWithCommas(dayTotals[e.date].out)}</span>
+                                        <span class="text-blue-900">📊 جمع روز: ${formatNumberWithCommas(dayTotals[e.date].in - dayTotals[e.date].out)} تومان</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                let badge = '';
+                if (e.type === 'ورود') {
+                    badge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">بدهی</span>';
+                } else if (e.type === 'خروج') {
+                    badge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">بستانکاری</span>';
+                } else {
+                    badge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">دریافت روزانه</span>';
+                }
+
+                html += `
+                    <tr class="border-b hover:bg-gray-50 transition fade-in">
+                        <td class="px-4 py-3">
+                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" value="${e.id}">
+                        </td>
+                        <td data-label="#" class="px-4 py-3 text-gray-400 text-xs">${absoluteIndex}</td>
+                        <td data-label="عنوان" class="px-4 py-3 font-medium text-gray-800">${e.name}</td>
+                        <td data-label="گروه" class="px-4 py-3"><span class="bg-gray-100 px-2 py-0.5 rounded-full text-xs">${e.category}</span></td>
+                        <td data-label="نوع" class="px-4 py-3">${badge}</td>
+                        <td data-label="مبلغ (تومان)" class="px-4 py-3 font-mono text-blue-600">${formatNumberWithCommas(e.price)}</td>
+                       <td data-label="تاریخ" class="px-4 py-3 text-xs text-gray-500 font-mono">${e.date}</td>
+                        <td data-label="توضیحات" class="px-4 py-3 text-xs text-gray-500 max-w-[150px] truncate${e.note ? ' note-cell' : ''}" ${e.note ? `onclick="openNotePopup(${e.id})" title="نمایش کامل توضیحات"` : ''}>${e.note || '—'}</td>
+                        <td data-label="عملیات" class="px-4 py-3 text-center flex items-center justify-center gap-3 no-print">
+                            <button onclick="editEntry(${e.id})" class="edit-btn text-blue-400 hover:text-blue-600 transition" title="ویرایش">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteEntry(${e.id})" class="delete-btn text-red-400 hover:text-red-600 transition" title="حذف">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            return html;
         }
 
         function changePage(page) {
@@ -2141,7 +2162,7 @@
                             AUTHENTICATE &#128273;
                         </button>
 
-                        <div style="font-size:8.5px; color:#8a7f60; margin-top:14px; letter-spacing:1.4px;">FORM FR-2001 &bull; UNAUTHORIZED ACCESS IS PROHIBITED</div>
+                        <div style="font-size:8.5px; color:#8a7f60; margin-top:14px; letter-spacing:1.4px;">FORM FR-1998 &bull; UNAUTHORIZED ACCESS IS PROHIBITED</div>
                     </div>
                 `;
                 (document.body || document.documentElement).appendChild(lockModal);
@@ -2272,9 +2293,19 @@ function buildInvoiceDocument() {
     const signEl = document.querySelector('.print-signature');
 
     const headerHTML = headerEl ? headerEl.outerHTML : '';
+
     let tableHTML = '';
     if (tableEl) {
-        const t = tableEl.cloneNode(true);
+        // چاپ همه تراکنش‌ها (نه فقط صفحه فعلی) — با همان فیلتر و مرتب‌سازی فعال
+        const allItems = getFilteredSorted();
+        const dayTotals = buildDayTotals(allItems);
+
+        const wrap = document.createElement('div');
+        const theadHTML = tableEl.querySelector('thead') ? tableEl.querySelector('thead').outerHTML : '';
+        const footEl = document.getElementById('printTotals');
+        wrap.innerHTML = `<table>${theadHTML}<tbody>${buildRowsHTML(allItems, dayTotals, 0)}</tbody><tfoot id="printTotals">${footEl ? footEl.innerHTML : ''}</tfoot></table>`;
+
+        const t = wrap.querySelector('table');
         t.querySelectorAll('.no-print').forEach(el => el.remove());
         t.querySelectorAll('tr').forEach(tr => {
             const first = tr.children[0];
@@ -2282,8 +2313,7 @@ function buildInvoiceDocument() {
         });
         t.querySelectorAll('input, button, select, textarea').forEach(el => el.remove());
         const foot = t.querySelector('#printTotals');
-        if (foot) foot.removeAttribute('class');
-        t.removeAttribute('class');
+        if (foot) foot.removeAttribute('id');
         tableHTML = t.outerHTML;
     }
     const signHTML = signEl ? signEl.outerHTML.replace('class="print-signature"', 'class="sign-row"') : '';
