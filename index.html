@@ -354,6 +354,13 @@
             padding: 18px 20px 16px;
             margin-bottom: 16px;
         }
+        .balance-hero.negative {
+            background:
+                repeating-linear-gradient(45deg, rgba(255,255,255,.045) 0 2px, rgba(0,0,0,0) 2px 7px),
+                linear-gradient(135deg, var(--fed-negative-2), var(--fed-negative) 55%, var(--fed-negative-dark));
+            border-color: var(--fed-negative-2);
+            box-shadow: 0 20px 40px -18px rgba(95,22,22,.8), inset 0 0 0 1px rgba(255,255,255,.06);
+        }
         .balance-hero .bh-label { font-size: 13px; font-weight: 800; color: #cfe3d6; display: flex; align-items: center; gap: 8px; }
         .balance-hero .bh-amount {
             font-size: clamp(30px, 6vw, 52px);
@@ -408,6 +415,9 @@
 
         /* ================= تم داخلی: Department of the Treasury (هم‌سو با صفحه ورود) ================= */
         :root {
+            --fed-negative: #991b1b;
+            --fed-negative-2: #be3030;
+            --fed-negative-dark: #581515;
             --fed-green: #12351f;
             --fed-green-2: #1f4d36;
             --fed-green-3: #26603f;
@@ -1845,6 +1855,7 @@
                 }
             });
             let balance = totalIn - totalOut;
+            document.querySelector('.balance-hero')?.classList.toggle('negative', balance < 0);
 
             totalInSpan.textContent = formatNumberWithCommas(totalIn);
             totalOutSpan.textContent = formatNumberWithCommas(totalOut);
