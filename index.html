@@ -65,6 +65,14 @@
             }
             .max-w-6xl { max-width: none !important; }
             .glass-card, .shadow-xl, .shadow, .shadow-sm { box-shadow: none !important; }
+            .glass-card, .main-header, body input, body select, body textarea,
+            .hdr-menu-panel, .note-card, .arch-card, #calcModal > div,
+            #entriesTable thead, #entriesTable tbody tr.day-row {
+                background: #fff !important;
+                backdrop-filter: none !important;
+                box-shadow: none !important;
+                border-color: #cbd5e1 !important;
+            }
             .rounded-2xl, .rounded-xl { border-radius: 0 !important; }
 
             .print-invoice-header { display: block !important; }
@@ -428,32 +436,60 @@
             --fed-gold: #9a7f33;
             --fed-ink: #2b2a20;
             --fed-muted: #6f6852;
+            --fed-field-glass: rgba(255,255,255,.22);
+            --fed-field-highlight: rgba(255,255,255,.65);
+            --fed-field-edge: rgba(255,255,255,.8);
+            --fed-field-shadow: rgba(18,53,31,.16);
+            --fed-field-focus: rgba(255,255,255,.38);
+            --fed-popup-glass: rgba(255,253,245,.32);
+            --fed-popup-selected: rgba(31,77,54,.16);
+            --fed-popup-shadow: rgba(18,53,31,.23);
         }
         body {
             background-color: var(--fed-paper) !important;
             background-image:
                 radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.85), rgba(255,255,255,0) 60%),
+                radial-gradient(55% 40% at 88% 8%, rgba(38,96,63,.30), rgba(38,96,63,0) 70%),
+                radial-gradient(50% 42% at 6% 72%, rgba(154,127,51,.28), rgba(154,127,51,0) 70%),
+                radial-gradient(40% 35% at 92% 85%, rgba(31,77,54,.22), rgba(31,77,54,0) 70%),
                 repeating-linear-gradient(45deg, rgba(31,77,54,.035) 0 2px, rgba(0,0,0,0) 2px 6px),
                 linear-gradient(var(--fed-paper), var(--fed-paper-2)) !important;
             color: var(--fed-ink);
         }
-        /* کارت‌ها و سطوح */
+        /* کارت‌ها و سطوح — شیشه‌ای (glassmorphism) */
         .glass-card,
         body .bg-white,
         body .bg-slate-50,
         body .bg-gray-50,
         body .bg-blue-50,
         body .bg-gray-100 {
-            background: linear-gradient(#fffdf5, #f7f4e9) !important;
-            backdrop-filter: none !important;
+            background: rgba(255, 255, 255, 0.45) !important;
+            backdrop-filter: blur(12px) saturate(150%);
         }
         body .border-slate-200, body .border-gray-200, body .border-gray-300,
         body .border-blue-100, body .border-blue-200, body .border-slate-300 {
             border-color: var(--fed-line) !important;
         }
         .glass-card, .bg-white.rounded-2xl, .main-header {
-            border: 1px solid var(--fed-line-2) !important;
-            box-shadow: 0 14px 34px -20px rgba(18,53,31,.55) !important;
+            border: 1px solid rgba(255, 255, 255, 0.55) !important;
+            box-shadow:
+                0 8px 32px -18px rgba(18,53,31,.45),
+                inset 0 1px 0 rgba(255,255,255,.55),
+                inset 0 -1px 0 rgba(255,255,255,.12) !important;
+            position: relative;
+            overflow: hidden;
+        }
+        /* خط نور بالای کارت‌های شیشه‌ای */
+        .glass-card::before, .main-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.85), transparent);
+            pointer-events: none;
+            z-index: 1;
         }
         /* تیترها و متن */
         body h1, body h2, body h3, body h4,
@@ -482,33 +518,120 @@
         .main-header {
             border-top: 3px solid var(--fed-green) !important;
             border-radius: 12px !important;
+            /* بدون blur روی خود هدر تا منوی «بیشتر» داخل آن گیر نکند */
+            overflow: visible !important;
+            backdrop-filter: none !important;
+            background: rgba(255,253,245,.82) !important;
         }
+        .main-header::before { display: none; }
         .main-header h1 { letter-spacing: .3px; }
         .main-header .bg-blue-50 { background: #eaf0e6 !important; border-color: #c3cfb8 !important; }
         /* فرم‌ها */
+        /* فرم‌ها — شیشه‌ای */
         body input, body select, body textarea {
-            background: #fffdf6 !important;
-            border-color: var(--fed-line-2) !important;
+            background: rgba(255,255,255,.55) !important;
+            backdrop-filter: blur(8px) saturate(140%);
+            border-color: rgba(255,255,255,.65) !important;
             color: var(--fed-ink) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 16px -12px rgba(18,53,31,.35);
         }
         body input:focus, body select:focus, body textarea:focus {
             border-color: var(--fed-green-2) !important;
+            background: rgba(255,255,255,.75) !important;
             box-shadow: 0 0 0 3px rgba(31,77,54,.15) !important;
+        }
+        /* سطح شیشه‌ای مستقل برای تمام باکس‌های ثبت تراکنش */
+        .transaction-form input, .transaction-form select {
+            background-color: var(--fed-field-glass) !important;
+            backdrop-filter: blur(5px) saturate(150%);
+            border: 1px solid var(--fed-field-edge) !important;
+            box-shadow:
+                inset 0 1px 0 var(--fed-field-highlight),
+                inset 0 -1px 0 var(--fed-field-shadow),
+                0 4px 12px -6px var(--fed-field-shadow) !important;
+        }
+        .transaction-form input {
+            background-image: linear-gradient(135deg, var(--fed-field-highlight), transparent 45%) !important;
+        }
+        .transaction-form input:focus, .transaction-form select:focus {
+            background-color: var(--fed-field-focus) !important;
+            border-color: var(--fed-green-2) !important;
+            box-shadow: inset 0 1px 0 var(--fed-field-highlight), 0 0 0 3px var(--fed-field-shadow) !important;
+        }
+        .ledger-select { width: 100%; }
+        .ledger-select select[hidden] { display: none !important; }
+        .ledger-select-trigger {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            width: 100%; min-height: 46px; padding: 10px 16px; border-radius: 12px;
+            background: var(--fed-field-glass); color: var(--fed-ink);
+            border: 1px solid var(--fed-field-edge); cursor: pointer;
+            backdrop-filter: blur(5px) saturate(150%);
+            box-shadow: inset 0 1px 0 var(--fed-field-highlight), 0 4px 12px -6px var(--fed-field-shadow);
+            text-align: right;
+        }
+        .ledger-select-arrow {
+            display: block; width: 16px; height: 16px; flex: 0 0 16px;
+            color: var(--fed-green-2); pointer-events: none;
+        }
+        .ledger-select-arrow svg {
+            display: block; width: 16px; height: 16px;
+            fill: none; stroke: currentColor; stroke-width: 2.5;
+            stroke-linecap: round; stroke-linejoin: round;
+        }
+        .ledger-select-trigger:focus-visible { outline: 2px solid var(--fed-green-2); outline-offset: 2px; }
+        .ledger-select-menu {
+            position: fixed; z-index: 100000; padding: 5px; border-radius: 8px;
+            max-height: min(320px, 70dvh); overflow-y: auto;
+            background: var(--fed-popup-glass); color: var(--fed-ink);
+            border: 1px solid var(--fed-field-edge);
+            -webkit-backdrop-filter: blur(8px) saturate(150%);
+            backdrop-filter: blur(8px) saturate(150%);
+            box-shadow: inset 0 1px 0 var(--fed-field-highlight), 0 12px 32px var(--fed-popup-shadow);
+        }
+        .ledger-select-menu[hidden] { display: none; }
+        .ledger-select-menu button {
+            display: block; width: 100%; min-height: 42px; padding: 8px 12px;
+            border-radius: 5px; text-align: right; color: inherit; background: transparent; cursor: pointer;
+        }
+        .ledger-select-menu button:hover, .ledger-select-menu button:focus-visible,
+        .ledger-select-menu button[aria-selected="true"] { background: var(--fed-popup-selected); outline: none; }
+        /* لیست‌های کشویی (زبانه‌ها) با تم دفترچه */
+        body select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231f4d36' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: left 12px center !important;
+            padding-left: 34px !important;
+            cursor: pointer;
+        }
+        body select option {
+            background: #fffdf5;
+            color: var(--fed-ink);
         }
         .editing-mode { border-color: var(--fed-green-2) !important; box-shadow: 0 0 0 3px rgba(31,77,54,.2) !important; }
         /* جدول */
-        #entriesTable thead { background: linear-gradient(#eef0e4, #e3e6d5) !important; border-bottom: 2px solid var(--fed-green) !important; }
+        #entriesTable thead { background: rgba(238,240,228,.7) !important; backdrop-filter: blur(6px); border-bottom: 2px solid var(--fed-green) !important; }
         #entriesTable thead th { color: var(--fed-green) !important; letter-spacing: .2px; }
-        #entriesTable tbody tr.day-row { background: #eaf0e6 !important; border-color: #c3cfb8 !important; }
+        #entriesTable tbody tr.day-row { background: rgba(234,240,230,.6) !important; border-color: #c3cfb8 !important; }
         #entriesTable tbody td[data-label]::before { color: var(--fed-muted) !important; }
-        /* پنل منو و مودال‌ها */
-        .hdr-menu-panel { background: linear-gradient(#fffdf5, #f5f2e7) !important; border-color: var(--fed-line-2) !important; }
+        /* پنل منو و مودال‌ها — شیشه‌ای */
+        .hdr-menu-panel {
+            background: rgba(255,253,245,.6) !important;
+            backdrop-filter: blur(14px) saturate(150%);
+            border-color: rgba(255,255,255,.55) !important;
+            box-shadow: 0 18px 40px -18px rgba(18,53,31,.5) !important;
+        }
         .hdr-menu-panel button { color: #3a3626 !important; }
-        .hdr-menu-panel button:hover { background: #ece7d5 !important; }
-        .note-card, .arch-card { background: linear-gradient(#fffdf5, #f5f2e7) !important; border: 1px solid var(--fed-line-2); }
-        .arch-item { background: #fbf8ee !important; border-color: var(--fed-line) !important; }
+        .hdr-menu-panel button:hover { background: rgba(236,231,213,.75) !important; }
+        .note-card, .arch-card, #calcModal > div {
+            background: rgba(255,253,245,.62) !important;
+            backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid rgba(255,255,255,.55) !important;
+        }
+        .arch-item { background: rgba(251,248,238,.7) !important; border-color: var(--fed-line) !important; }
         .arch-item h4 { color: var(--fed-green) !important; }
-        .status-pill { background: #fbf8ee !important; border-color: var(--fed-line) !important; }
+        .status-pill { background: rgba(251,248,238,.6) !important; backdrop-filter: blur(8px); border-color: rgba(255,255,255,.55) !important; }
         /* اسکرول‌بار */
         ::-webkit-scrollbar-track { background: var(--fed-paper-2); }
         ::-webkit-scrollbar-thumb { background: #a7a184; }
@@ -529,10 +652,16 @@
             z-index: 99999 !important;
             font-size: 14px !important;
             box-sizing: border-box !important;
-            background: #fffdf7 !important;
-            border: 1px solid #d9cfae !important;
+            background: var(--fed-popup-glass) !important;
+            border: 1px solid var(--fed-field-edge) !important;
+            backdrop-filter: blur(12px) saturate(150%);
+            box-shadow: inset 0 1px 0 var(--fed-field-highlight), 0 12px 32px var(--fed-popup-shadow) !important;
+            border-radius: 8px !important;
         }
         jdp-container, jdp-container * { box-sizing: border-box !important; }
+        jdp-container .jdp-day:not(.selected), jdp-container .jdp-day-name,
+        jdp-container .jdp-days, jdp-container .jdp-days-header,
+        jdp-container .jdp-months, jdp-container .jdp-years { background: transparent !important; }
         /* Tailwind preflight دکمه‌ها و svg را ریست می‌کند؛ اینجا برمی‌گردانیم */
         jdp-container svg {
             display: inline-block !important;
@@ -546,7 +675,7 @@
         jdp-container .jdp-icon-minus {
             border: 1px solid #b9ad86 !important;
             border-radius: 6px !important;
-            background: #fff !important;
+            background: var(--fed-field-glass) !important;
             line-height: 0 !important;
             padding: 2px !important;
             flex: none !important;
@@ -590,7 +719,7 @@
             border: 1px solid transparent !important;
         }
         jdp-container .jdp-day.today { border-color: #b9ad86 !important; }
-        jdp-container .jdp-day:not(.disabled-day):hover { transform: none !important; background: #efe9d6 !important; }
+        jdp-container .jdp-day:not(.disabled-day):hover { transform: none !important; background: var(--fed-popup-selected) !important; }
         jdp-container .jdp-footer { display: flex !important; justify-content: space-between !important; gap: 6px !important; width: 100% !important; }
         jdp-container .jdp-btn-today,
         jdp-container .jdp-btn-empty,
@@ -713,7 +842,7 @@
 
 
         <!-- فرم ثبت -->
-        <div class="glass-card rounded-2xl shadow-xl p-6 mb-6 fade-in no-print">
+        <div class="transaction-form glass-card rounded-2xl shadow-xl p-6 mb-6 fade-in no-print">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <!-- نام کالا -->
                 <div class="md:col-span-3">
@@ -2570,5 +2699,122 @@ function openInvoiceWindow(html) {
 window.printInvoice = printInvoice;
 
     </script>
+    <script>
+// Keep the original selects as the source of truth for ledger scripts.
+const initializeLedgerSelects = () => {
+    let closeActive = () => {};
+    ['itemCategory', 'itemType'].forEach(id => {
+        const select = document.getElementById(id);
+        if (!select || select.closest('.ledger-select')) return;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ledger-select';
+        select.before(wrapper);
+        wrapper.append(select);
+        select.hidden = true;
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'ledger-select-trigger';
+        trigger.setAttribute('role', 'combobox');
+        trigger.setAttribute('aria-label', id === 'itemCategory' ? 'گروه' : 'نوع');
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+        const text = document.createElement('span');
+        const arrow = document.createElement('span');
+        arrow.className = 'ledger-select-arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('focusable', 'false');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M6 9l6 6 6-6');
+        svg.append(path);
+        arrow.append(svg);
+        trigger.append(text, arrow);
+        wrapper.append(trigger);
+        const menu = document.createElement('div');
+        menu.className = 'ledger-select-menu';
+        menu.id = id + '-listbox';
+        menu.setAttribute('role', 'listbox');
+        menu.setAttribute('aria-label', trigger.getAttribute('aria-label'));
+        menu.hidden = true;
+        trigger.setAttribute('aria-controls', menu.id);
+        document.body.append(menu);
+        const sync = () => {
+            text.textContent = select.options[select.selectedIndex]?.textContent || '';
+            Array.from(menu.children).forEach((el, index) => {
+                el.setAttribute('aria-selected', String(index === select.selectedIndex));
+            });
+        };
+        const close = (restore = false) => {
+            menu.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+            if (restore) trigger.focus();
+        };
+        const position = () => {
+            const rect = trigger.getBoundingClientRect();
+            menu.style.width = rect.width + 'px';
+            menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8)) + 'px';
+            menu.style.top = Math.min(rect.bottom + 6, window.innerHeight - menu.offsetHeight - 8) + 'px';
+        };
+        Array.from(select.options).forEach((option, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.setAttribute('role', 'option');
+            button.textContent = option.textContent;
+            button.disabled = option.disabled;
+            button.addEventListener('click', () => {
+                select.value = option.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                sync();
+                close(true);
+            });
+            button.addEventListener('keydown', event => {
+                if (event.key === 'Escape') { event.preventDefault(); close(true); }
+                if (event.key === 'Tab') close();
+                if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+                    event.preventDefault();
+                    const next = event.key === 'Home' ? 0 : event.key === 'End' ? menu.children.length - 1 :
+                        (index + (event.key === 'ArrowDown' ? 1 : -1) + menu.children.length) % menu.children.length;
+                    menu.children[next]?.focus();
+                }
+            });
+            menu.append(button);
+        });
+        const open = () => {
+            closeActive();
+            sync();
+            menu.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+            position();
+            closeActive = close;
+            menu.children[select.selectedIndex]?.focus();
+        };
+        trigger.addEventListener('click', () => menu.hidden ? open() : close());
+        trigger.addEventListener('keydown', event => {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); open(); }
+        });
+        document.addEventListener('pointerdown', event => {
+            if (!wrapper.contains(event.target) && !menu.contains(event.target)) close();
+        });
+        window.addEventListener('resize', () => close());
+        window.addEventListener('scroll', () => close(), true);
+        select.addEventListener('change', sync);
+        const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+        if (valueDescriptor?.get && valueDescriptor?.set) {
+            Object.defineProperty(select, 'value', {
+                get() { return valueDescriptor.get.call(this); },
+                set(value) { valueDescriptor.set.call(this, value); sync(); },
+                configurable: true,
+            });
+        }
+        sync();
+    });
+};
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initializeLedgerSelects, { once: true });
+} else {
+    initializeLedgerSelects();
+}
+</script>
 </body>
 </html>
