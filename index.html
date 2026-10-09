@@ -1393,9 +1393,12 @@
                     entries = result.entries || [];
                     idCounter = result.idCounter || (entries.length ? Math.max(...entries.map(e => e.id || 0)) : 0);
                     if (Array.isArray(result.archives)) {
+                        const before = JSON.stringify(result.archives.map(a => a && a.id));
                         archives = mergeArchives(archives, result.archives);
                         saveArchives();
                         renderArchiveList();
+                        // اگر ابر دوره‌های خالی یا حذف‌شده داشت، نسخه تمیز را برگردان
+                        if (before !== JSON.stringify(archives.map(a => a.id))) window.__archiveNeedsPush = true;
                     }
 
                     isCloudConnected = true;
@@ -1403,6 +1406,7 @@
                     lastSyncAt = Date.now();
                     saveLocal();
                     render();
+                    if (window.__archiveNeedsPush) { window.__archiveNeedsPush = false; setTimeout(() => pushToCloud(), 0); }
                 } else {
                     throw new Error('داده‌ای یافت نشد');
                 }
@@ -1528,7 +1532,7 @@
             try {
                 const raw = localStorage.getItem(ARCHIVE_KEY);
                 const data = raw ? JSON.parse(raw) : [];
-                archives = Array.isArray(data) ? data : [];
+                archives = cleanArchives(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.warn('خواندن آرشیو ناموفق بود', err);
                 archives = [];
@@ -1546,10 +1550,29 @@
         }
 
         // ادغام آرشیو محلی و ابری بدون ایجاد تکراری (بر اساس شناسه دوره)
+        const ARCHIVE_DELETED_KEY = 'shopLedger_archives_deleted_v1';
+        function getDeletedArchiveIds() {
+            try { return new Set(JSON.parse(localStorage.getItem(ARCHIVE_DELETED_KEY) || '[]').map(String)); } catch (e) { return new Set(); }
+        }
+        function markArchiveDeleted(id) {
+            const s = getDeletedArchiveIds(); s.add(String(id));
+            try { localStorage.setItem(ARCHIVE_DELETED_KEY, JSON.stringify([...s])); } catch (e) {}
+        }
+        // دوره معتبر: شناسه دارد و حداقل یک تراکنش دارد
+        function isValidArchive(p) {
+            return !!(p && typeof p === 'object' && p.id && Array.isArray(p.entries) && p.entries.length > 0);
+        }
+        function cleanArchives(list) {
+            const deleted = getDeletedArchiveIds();
+            const map = new Map();
+            (list || []).forEach(p => { if (isValidArchive(p) && !deleted.has(String(p.id))) map.set(String(p.id), p); });
+            return Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        }
         function mergeArchives(localList, cloudList) {
+            const deleted = getDeletedArchiveIds();
             const map = new Map();
             [...(localList || []), ...(cloudList || [])].forEach(p => {
-                if (p && p.id) map.set(String(p.id), p);
+                if (isValidArchive(p) && !deleted.has(String(p.id))) map.set(String(p.id), p);
             });
             return Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         }
@@ -1651,6 +1674,7 @@
             const p = archives.find(a => String(a.id) === String(id));
             if (!p) return;
             if (!confirm(`آیا دوره «${p.title}» برای همیشه حذف شود؟`)) return;
+            markArchiveDeleted(id);
             archives = archives.filter(a => String(a.id) !== String(id));
             saveArchives();
             renderArchiveList();
